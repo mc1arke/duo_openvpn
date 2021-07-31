@@ -8,7 +8,7 @@
 # Duo OpenVPN
 # Copyright 2013 Duo Security, Inc.
 
-__version__ = '2.4'
+__version__ = '2.5'
 
 import base64
 import email.utils
@@ -358,13 +358,13 @@ def preauth(client, control, username, ipaddr):
         log('unknown preauth result: %s' % result)
         failure(control)
 
-def auth(client, control, username, password, ipaddr):
+def auth(client, control, username, challenge_type, ipaddr):
     log('authentication for %s' % username)
 
     response = client.json_api_call('POST', '/rest/v1/auth', {
         'user': username,
         'factor': 'auto',
-        'auto': password,
+        'auto': challenge_type,
         'ipaddr': ipaddr,
     })
 
@@ -388,7 +388,7 @@ def auth(client, control, username, password, ipaddr):
 def main(Client=Client, environ=os.environ):
     control = environ.get('control')
     username = environ.get('username')
-    password = environ.get('password')
+    challenge_type = environ.get('challenge_type')
     ipaddr = environ.get('ipaddr', '0.0.0.0')
 
     if not control or not username:
@@ -421,15 +421,15 @@ def main(Client=Client, environ=os.environ):
         log(str(e))
         failure(control)
 
-    if not (password or default_factor):
-        log('no password provided and no out-of-band factors '
+    if not (challenge_type or default_factor):
+        log('no challenge type provided and no out-of-band factors '
             'available for username {0:s}'.format(username))
         failure(control)
-    elif not password:
-        password = default_factor
+    elif not challenge_type:
+        challenge_type = default_factor
 
     try:
-        auth(client, control, username, password, ipaddr)
+        auth(client, control, username, challenge_type, ipaddr)
     except Exception as e:
         log(str(e))
         failure(control)
